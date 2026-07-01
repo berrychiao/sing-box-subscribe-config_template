@@ -1,0 +1,242 @@
+{
+    "log": {
+        "level": "debug",
+        "timestamp": true
+    },
+    "experimental": {
+        "clash_api": {
+            "external_controller": "127.0.0.1:9090",
+            "external_ui": "ui",
+            "secret": "",
+            "external_ui_download_url": "https://gh-proxy.com/https://github.com/MetaCubeX/metacubexd/archive/refs/heads/gh-pages.zip",
+            "external_ui_download_detour": "direct",
+            "default_mode": "rule"
+        },
+        "cache_file": {
+            "enabled": true,
+            "store_fakeip": false
+        }
+    },
+    "dns": {
+        "servers": [
+            {
+                "tag": "proxyDns",
+                "type": "udp",
+                "server": "8.8.8.8",
+                "detour": "proxy"
+            },
+            {
+                "tag": "localDns",
+                "type": "https",
+                "server": "223.5.5.5",
+                "path": "/dns-query"
+            }
+        ],
+        "rules": [
+            {
+                "clash_mode": "direct",
+                "server": "localDns"
+            },
+            {
+                "clash_mode": "global",
+                "server": "proxyDns"
+            },
+            {
+                "rule_set": "geosite-gfw",
+                "server": "proxyDns"
+            },
+            {
+                "rule_set": "geosite-cn",
+                "server": "localDns"
+            },
+            {
+                "rule_set": "geoip-cn",
+                "server": "localDns"
+            },
+            {
+                "server": "proxyDns"
+            }
+        ],
+        "final": "proxyDns",
+        "strategy": "ipv4_only"
+    },
+    "inbounds": [
+        {
+            "tag": "tun-in",
+            "type": "tun",
+            "address": [
+                "172.19.0.0/30"
+            ],
+            "mtu": 9000,
+            "auto_route": true,
+            "strict_route": true,
+            "stack": "system",
+            "platform": {
+                "http_proxy": {
+                    "enabled": true,
+                    "server": "127.0.0.1",
+                    "server_port": 2080
+                }
+            }
+        },
+        {
+            "tag": "mixed-in",
+            "type": "mixed",
+            "listen": "127.0.0.1",
+            "listen_port": 2080
+        }
+    ],
+    "outbounds": [
+        {
+            "tag": "proxy",
+            "type": "selector",
+            "outbounds": [
+                "auto",
+                "direct",
+                "法国+ONLINE+S.A.S.数据中心",
+                "{all}"
+            ]
+        },
+        {
+            "tag": "auto",
+            "type": "urltest",
+            "outbounds": [
+                "法国+ONLINE+S.A.S.数据中心",
+                "{all}"
+            ],
+            "url": "http://www.gstatic.com/generate_204",
+            "interval": "10m",
+            "tolerance": 50
+        },
+        {
+            "type": "direct",
+            "tag": "direct"
+        },
+        {
+            "tag": "法国+ONLINE+S.A.S.数据中心",
+            "type": "hysteria2",
+            "server": "clash-ip1.9.xyz",
+            "server_port": 18271,
+            "password": "github.com/Alvi",
+            "up_mbps": 10,
+            "down_mbps": 100,
+            "tls": {
+                "enabled": true,
+                "server_name": "clash-ip1.9.xyz",
+                "insecure": false,
+                "alpn": [
+                    "h3"
+                ]
+            }
+        }
+    ],
+    "route": {
+        "auto_detect_interface": true,
+        "default_domain_resolver": "localDns",
+        "final": "proxy",
+        "rules": [
+            {
+                "ip_cidr": [
+                    "8.8.8.0/24",
+                    "1.1.1.0/24",
+                    "9.9.9.0/24",
+                    "208.67.222.0/24",
+                    "4.2.2.0/24"
+                ],
+                "outbound": "proxy"
+            },
+            {
+                "inbound": [
+                    "tun-in",
+                    "mixed-in"
+                ],
+                "action": "sniff"
+            },
+            {
+                "type": "logical",
+                "mode": "or",
+                "rules": [
+                    {
+                        "port": 53
+                    },
+                    {
+                        "protocol": "dns"
+                    }
+                ],
+                "action": "hijack-dns"
+            },
+            {
+                "clash_mode": "rule",
+                "rule_set": "geosite-gfw",
+                "outbound": "proxy"
+            },
+            {
+                "rule_set": "geosite-category-ads-all",
+                "clash_mode": "rule",
+                "action": "reject"
+            },
+            {
+                "rule_set": "geosite-category-ads-all",
+                "clash_mode": "global",
+                "outbound": "proxy"
+            },
+            {
+                "clash_mode": "rule",
+                "rule_set": "geosite-cn",
+                "outbound": "direct"
+            },
+            {
+                "clash_mode": "rule",
+                "rule_set": "geoip-cn",
+                "outbound": "direct"
+            },
+            {
+                "clash_mode": "direct",
+                "outbound": "direct"
+            },
+            {
+                "clash_mode": "global",
+                "outbound": "proxy"
+            },
+            {
+                "domain": [
+                    "clash.razord.top",
+                    "yacd.metacubex.one",
+                    "yacd.haishan.me",
+                    "d.metacubex.one"
+                ],
+                "outbound": "direct"
+            }
+        ],
+        "rule_set": [
+            {
+                "tag": "geosite-category-ads-all",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/category-ads-all.srs",
+                "download_detour": "direct"
+            },
+            {
+                "tag": "geosite-cn",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/cn.srs",
+                "download_detour": "direct"
+            },
+            {
+                "tag": "geoip-cn",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geoip/cn.srs",
+                "download_detour": "direct"
+            },
+            {
+                "tag": "geosite-gfw",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/gfw.srs",
+                "download_detour": "direct"
+            }
+        ]
+    }
+}
